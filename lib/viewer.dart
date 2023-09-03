@@ -116,6 +116,7 @@ class SkinViewerState extends State<SkinViewer> {
   late final three.Texture _earsTexture;
   late final Texture? _backgroundTexture;
   late final dynamic _sourceTexture;
+  bool _loaded = false;
   bool _disposed = false;
   bool _renderPaused = false;
   late double _zoom;
@@ -124,9 +125,10 @@ class SkinViewerState extends State<SkinViewer> {
   Future<void> init() async {
     // initTexture();
     await initRenderer();
-    // scene = three.Scene();
+    scene = three.Scene();
     // camera = three.PerspectiveCamera();
     // camera.add(cameraLight);
+    // camera.lookAt(scene.position);
     // scene.add(camera);
     // scene.add(globalLight);
     // initPlayer();
@@ -136,10 +138,11 @@ class SkinViewerState extends State<SkinViewer> {
     camera.lookAt(scene.position);
     scene.background = three.Color(1.0, 1.0, 1.0);
     scene.add(three.AmbientLight(0x222244, null));
-    final geometryCylinder = three.CylinderGeometry(0.5, 0.5, 1, 32);
-    final materialCylinder = three.MeshPhongMaterial({"color": 0xff0000});
-    final mesh = three.Mesh(geometryCylinder, materialCylinder);
-    scene.add(mesh);
+    // final geometryCylinder = three.CylinderGeometry(0.5, 0.5, 1, 32);
+    // final materialCylinder = three.MeshPhongMaterial({"color": 0xff0000});
+    // final mesh = three.Mesh(geometryCylinder, materialCylinder);
+    // scene.add(mesh);
+    animate();
   }
 
   void initTexture() {
@@ -158,12 +161,9 @@ class SkinViewerState extends State<SkinViewer> {
         widget.options.devicePixelRatio ?? window.devicePixelRatio;
     Map<String, dynamic> options = {
       'antialias': true,
-      // 'alpha': widget.options.alpha ?? true,
-      'alpha': widget.options.alpha ?? false,
-      // 'width': widget.options.width,
-      'width': 200,
-      // 'height': widget.options.height,
-      'height': 200,
+      'alpha': widget.options.alpha ?? true,
+      'width': widget.options.width,
+      'height': widget.options.height,
       'dpr': devicePixelRatio,
     };
 
@@ -199,6 +199,7 @@ class SkinViewerState extends State<SkinViewer> {
       renderer.setRenderTarget(renderTarget);
       _sourceTexture = renderer.getRenderTargetGLTexture(renderTarget);
     }
+    _loaded = true;
   }
 
   void initPlayer() async {
@@ -250,7 +251,6 @@ class SkinViewerState extends State<SkinViewer> {
 
   @override
   Widget build(BuildContext context) {
-    renderer.render(scene, camera);
     return FutureBuilder(
       future: init(),
       builder: (context, snapshot) {
@@ -274,8 +274,29 @@ class SkinViewerState extends State<SkinViewer> {
     );
   }
 
+  void animate() {
+    if (!mounted || _disposed) {
+      return;
+    }
+
+    if (!_loaded) {
+      return;
+    }
+
+    render();
+
+    Future.delayed(const Duration(milliseconds: 40), () {
+      animate();
+    });
+  }
+
+  void render() {
+    renderer.render(scene, camera);
+  }
+
   @override
   void dispose() {
+    _disposed = true;
     renderer.dispose();
     glPlugin.dispose();
     super.dispose();
